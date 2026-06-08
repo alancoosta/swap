@@ -1,5 +1,3 @@
-# Swap
-
 <p align="center">
   <img src="assets/swap-lockup.svg" alt="Swap logo" width="200">
 </p>
