@@ -11,6 +11,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+import ctypes
+ctypes.CDLL("libc.so.6").prctl(15, b"swap", 0, 0, 0)  # PR_SET_NAME
+
 import gi
 
 # Try Ayatana first (Ubuntu 22.04+), fall back to legacy AppIndicator3

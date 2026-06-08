@@ -20,7 +20,7 @@ if [ "${1:-}" = "--uninstall" ]; then
     echo "==> Uninstalling Swap..."
 
     # Stop running instance
-    TRAY_PID=$(pgrep -f "swap.py$" 2>/dev/null || true)
+    TRAY_PID=$(pgrep -x swap 2>/dev/null || true)
     if [ -n "$TRAY_PID" ]; then
         kill $TRAY_PID 2>/dev/null || true
         echo "   Stopped running instance."
@@ -139,7 +139,7 @@ echo "==> Creating launcher command..."
 
 cat > "$BIN_DIR/swap" << 'EOF'
 #!/usr/bin/env bash
-exec python3 "$HOME/.local/share/swap/swap.py" "$@"
+exec -a swap python3 "$HOME/.local/share/swap/swap.py" "$@"
 EOF
 chmod +x "$BIN_DIR/swap"
 
@@ -168,7 +168,7 @@ fi
 # ── 7. restart running instances ──────────────────────────────────────────
 if [ "$IS_UPDATE" = true ]; then
     echo "==> Restarting running instance..."
-    TRAY_PID=$(pgrep -f "swap.py$" 2>/dev/null || true)
+    TRAY_PID=$(pgrep -x swap 2>/dev/null || true)
     if [ -n "$TRAY_PID" ]; then
         kill $TRAY_PID 2>/dev/null || true
         sleep 0.3
