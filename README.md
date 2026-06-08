@@ -1,7 +1,7 @@
 # Swap
 
 <p align="center">
-  <img src="assets/swap-lockup.svg" alt="Swap logo" width="128" height="128">
+  <img src="assets/swap-lockup.svg" alt="Swap logo" width="200">
 </p>
 
 <div align="center">
