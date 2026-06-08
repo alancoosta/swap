@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+*.pyo
+*.tmp
+
+# Assets - only track swap-icon.svg and swap-lockup.svg
+assets/*
+!assets/swap-icon.svg
+!assets/swap-lockup.svg
