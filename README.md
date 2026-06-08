@@ -8,6 +8,10 @@
 Switch between <b>Claude Code** settings.json</b> profiles instantly.
 </div>
 
+<p align="center">
+  <img src="assets/menu.png" alt="Swap logo" width="368">
+</p>
+
 ## Install
 
 ```bash
