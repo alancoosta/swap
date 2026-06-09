@@ -182,7 +182,7 @@ fn seed_config(config_file: &Path) {
         ]
       }
     },
-    "Empresa": {
+    "Company": {
       "model": "sonnet",
       "permissions": {
         "allow": [
