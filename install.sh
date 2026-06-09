@@ -65,65 +65,57 @@ fi
 SRC_DIR="$TMPDIR/swap"
 
 # ── 2. dependencies ───────────────────────────────────────────────────────
-echo "==> Checking dependencies..."
+echo "==> Checking build dependencies..."
 
-MISSING_PKGS=()
-
-check_pkg() {
-    python3 -c "import gi; gi.require_version('$1', '$2'); from gi.repository import $1" 2>/dev/null \
-        || MISSING_PKGS+=("$3")
-}
-
-check_pkg "Gtk"  "3.0" "python3-gi"
-
-# Check which AppIndicator variant is available
-INDICATOR_PKG=""
-python3 -c "import gi; gi.require_version('AyatanaAppIndicator3','0.1'); from gi.repository import AyatanaAppIndicator3" 2>/dev/null \
-    && INDICATOR_PKG="ayatana" \
-    || true
-
-if [ -z "$INDICATOR_PKG" ]; then
-    python3 -c "import gi; gi.require_version('AppIndicator3','0.1'); from gi.repository import AppIndicator3" 2>/dev/null \
-        && INDICATOR_PKG="legacy" \
-        || true
+# Rust toolchain
+if ! command -v cargo &>/dev/null; then
+    echo ""
+    echo "ERROR: cargo (Rust toolchain) not found."
+    echo "Install Rust from https://rustup.rs and re-run this script:"
+    echo "  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+    exit 1
 fi
 
-if [ -z "$INDICATOR_PKG" ]; then
-    MISSING_PKGS+=("gir1.2-appindicator3-0.1 or gir1.2-ayatanaappindicator3-0.1")
+# System dev libraries needed to compile the GTK / AppIndicator bindings.
+MISSING_PKGS=()
+
+command -v pkg-config &>/dev/null || MISSING_PKGS+=("pkg-config")
+pkg-config --exists gtk+-3.0 2>/dev/null || MISSING_PKGS+=("libgtk-3-dev")
+command -v notify-send &>/dev/null || MISSING_PKGS+=("libnotify-bin")
+
+# Prefer the Ayatana variant (Ubuntu 22.04+), fall back to the legacy one.
+if ! pkg-config --exists ayatana-appindicator3-0.1 2>/dev/null \
+    && ! pkg-config --exists appindicator3-0.1 2>/dev/null; then
+    if apt-cache show libayatana-appindicator3-dev >/dev/null 2>&1; then
+        MISSING_PKGS+=("libayatana-appindicator3-dev")
+    else
+        MISSING_PKGS+=("libappindicator3-dev")
+    fi
 fi
 
 if [ ${#MISSING_PKGS[@]} -gt 0 ]; then
     echo ""
-    echo "==> Installing missing packages..."
-    INSTALL_LIST=()
-    for pkg in "${MISSING_PKGS[@]}"; do
-        case "$pkg" in
-            python3-gi) INSTALL_LIST+=("python3-gi" "python3-gi-cairo" "gir1.2-gtk-3.0") ;;
-            *appindicator*)
-                if apt-cache show gir1.2-ayatanaappindicator3-0.1 >/dev/null 2>&1; then
-                    INSTALL_LIST+=("gir1.2-ayatanaappindicator3-0.1")
-                else
-                    INSTALL_LIST+=("gir1.2-appindicator3-0.1")
-                fi
-                ;;
-        esac
-    done
-    sudo apt-get install -y "${INSTALL_LIST[@]}" || {
+    echo "==> Installing missing system packages..."
+    sudo apt-get install -y "${MISSING_PKGS[@]}" || {
         echo ""
         echo "ERROR: Could not install packages automatically."
         echo "Please run:"
-        echo "  sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-appindicator3-0.1"
-        echo "or on Ubuntu 22.04+:"
-        echo "  sudo apt install python3-gi python3-gi-cairo gir1.2-gtk-3.0 gir1.2-ayatanaappindicator3-0.1"
+        echo "  sudo apt install libgtk-3-dev libayatana-appindicator3-dev"
+        echo "or, if Ayatana is unavailable:"
+        echo "  sudo apt install libgtk-3-dev libappindicator3-dev"
         exit 1
     }
 fi
 
-# ── 3. copy files ─────────────────────────────────────────────────────────
+# ── 3. build ──────────────────────────────────────────────────────────────
+echo "==> Building Swap (release)..."
+( cd "$SRC_DIR" && cargo build --release )
+
+# ── 4. copy files ─────────────────────────────────────────────────────────
 echo "==> Copying files to $INSTALL_DIR..."
 mkdir -p "$INSTALL_DIR" "$BIN_DIR"
 
-cp "$SRC_DIR/swap.py" "$INSTALL_DIR/"
+install -m 755 "$SRC_DIR/target/release/swap" "$BIN_DIR/swap"
 mkdir -p "$INSTALL_DIR/assets"
 cp "$SRC_DIR/assets/"*.svg "$INSTALL_DIR/assets/" 2>/dev/null || true
 cp "$SRC_DIR/assets/"*.png "$INSTALL_DIR/assets/" 2>/dev/null || true
@@ -133,15 +125,6 @@ cp "$SRC_DIR/assets/"*.ico "$INSTALL_DIR/assets/" 2>/dev/null || true
 mkdir -p "$HICOLOR/scalable/apps"
 cp "$SRC_DIR/assets/swap-icon.svg" "$HICOLOR/scalable/apps/swap.svg"
 gtk-update-icon-cache -f -t "$HICOLOR" 2>/dev/null || true
-
-# ── 4. launcher script ────────────────────────────────────────────────────
-echo "==> Creating launcher command..."
-
-cat > "$BIN_DIR/swap" << 'EOF'
-#!/usr/bin/env bash
-exec -a swap python3 "$HOME/.local/share/swap/swap.py" "$@"
-EOF
-chmod +x "$BIN_DIR/swap"
 
 # ── 5. autostart ──────────────────────────────────────────────────────────
 echo "==> Setting up autostart..."
@@ -162,7 +145,7 @@ sed -i "s|\$HOME|$HOME|g" "$AUTOSTART_DIR/swap.desktop"
 # ── 6. seed config ────────────────────────────────────────────────────────
 if [ ! -f "$CONFIG_FILE" ]; then
     echo "==> Creating starter config..."
-    python3 "$INSTALL_DIR/swap.py" --seed-only 2>/dev/null || true
+    "$BIN_DIR/swap" --seed-only 2>/dev/null || true
 fi
 
 # ── 7. restart running instances ──────────────────────────────────────────

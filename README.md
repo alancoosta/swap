@@ -69,13 +69,6 @@ swap &
 
 Click the tray icon to select a profile. Each profile overwrites `~/.claude/settings.json` (or whichever target you configure).
 
-## Requirements
-
-- Python 3.10+
-- GTK 3
-- AppIndicator3 (Ayatana or legacy)
-- Linux with a system tray (GNOME requires `gnome-shell-extension-appindicator`)
-
 ## License
 
 MIT
