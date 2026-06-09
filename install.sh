@@ -139,6 +139,7 @@ Icon=swap
 Terminal=false
 Type=Application
 X-GNOME-Autostart-enabled=true
+X-GNOME-Autostart-Delay=15
 EOF
 sed -i "s|\$HOME|$HOME|g" "$AUTOSTART_DIR/swap.desktop"
 

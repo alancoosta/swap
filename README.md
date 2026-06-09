@@ -3,7 +3,7 @@
 </p>
 
 <div align="center">
-Swap between <b>Claude Code** settings.json</b> profiles instantly.
+Swap between <b>Claude Code settings.json</b> profiles instantly.
 </div>
 
 <p align="center">
